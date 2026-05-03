@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 include(FetchContent)
-FechContent_Declare(
+FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
 )

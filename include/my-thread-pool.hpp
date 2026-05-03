@@ -1,6 +1,7 @@
 #ifndef MY_THREAD_POOL
 #define MY_THREAD_POOL
 
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <mutex>
@@ -18,6 +19,7 @@ class MyThreadPool {
 
   static MyThreadPool& GetInstance();
   void Submit(std::function<void()> func);
+  void WaitAll();
 
  private:
   MyThreadPool();
@@ -26,8 +28,10 @@ class MyThreadPool {
   std::vector<std::thread> thread_vector_;
   std::queue<std::function<void()>> task_queue_;
   std::mutex mtx_;
-  std::condition_variable cv_;
-  bool stop_;
+  std::condition_variable cv_thread;
+  std::condition_variable cv_wait_all;
+  std::atomic<bool> stop_;
+  std::atomic<int> running_func_count;
 };
 
 #endif  // MY_THREAD_POOL

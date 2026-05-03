@@ -8,6 +8,8 @@
 #include <thread>
 #include <vector>
 
+constexpr size_t kNumThread{100};
+
 class MyThreadPool {
  public:
   ~MyThreadPool();
@@ -15,14 +17,15 @@ class MyThreadPool {
   MyThreadPool& operator=(const MyThreadPool&) = delete;
 
   static MyThreadPool& GetInstance();
-  void Submit(std::function<void()>);
+  void Submit(std::function<void()> func);
 
  private:
   MyThreadPool();
+  void WorkInThread();
 
   std::vector<std::thread> thread_vector_;
   std::queue<std::function<void()>> task_queue_;
-  std::mutex mutex_;
+  std::mutex mtx_;
   std::condition_variable cv_;
   bool stop_;
 };

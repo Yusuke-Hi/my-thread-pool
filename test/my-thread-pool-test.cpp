@@ -22,3 +22,13 @@ TEST(MyThreadPoolTest, WaitAll) {
   pool.Submit([]() { std::cout << "Hello WaitAll Contry." << std::endl; });
   pool.WaitAll();
 }
+
+TEST(MyThreadPoolTest, Future) {
+  auto& pool = MyThreadPool::GetInstance();
+  auto future_int = pool.Submit([]() { return 42; });
+  auto future_string = pool.Submit([]() { return "Hello World."; });
+  int result_int = future_int.get();
+  std::string result_string = future_string.get();
+  EXPECT_EQ(result_int, 42);
+  EXPECT_EQ(result_string, "Hello World.");
+}

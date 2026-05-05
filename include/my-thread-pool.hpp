@@ -42,8 +42,8 @@ class MyThreadPool {
     std::packaged_task<void()> task{[p = std::move(promise), func]() mutable {
       try {
         if constexpr (std::is_void_v<T>) {
-          p.set_value();
           func();
+          p.set_value();
         } else {
           p.set_value(func());
         }

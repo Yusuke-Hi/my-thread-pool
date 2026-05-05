@@ -1,6 +1,9 @@
 #include "my-thread-pool.hpp"
 
-MyThreadPool::MyThreadPool() : stop_{false}, running_func_count{0} {
+std::unique_ptr<MyThreadPool> MyThreadPool::instance{nullptr};
+
+MyThreadPool::MyThreadPool(const size_t thread_size)
+    : stop_{false}, running_func_count{0}, kNumThread{thread_size} {
   for (int i = 0; i < kNumThread; ++i) {
     std::thread t([this]() { this->WorkInThread(); });
     thread_vector_.push_back(std::move(t));
@@ -32,11 +35,6 @@ void MyThreadPool::WorkInThread() {
     --running_func_count;
     cv_wait_all.notify_one();
   }
-}
-
-MyThreadPool& MyThreadPool::GetInstance() {
-  static MyThreadPool instance;
-  return instance;
 }
 
 void MyThreadPool::WaitAll() {

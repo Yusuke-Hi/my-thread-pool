@@ -5,12 +5,15 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
+#include <iostream>
+#include <memory>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
-constexpr size_t kNumThread{100};
+constexpr size_t kDefualtThreadNum{100};
 
 class MyThreadPool {
  public:
@@ -18,7 +21,19 @@ class MyThreadPool {
   MyThreadPool(const MyThreadPool&) = delete;
   MyThreadPool& operator=(const MyThreadPool&) = delete;
 
-  static MyThreadPool& GetInstance();
+  static void Init(const size_t thread_size) {
+    if (instance) {
+      std::cerr << "Init has already been called once.\n";
+    }
+    instance = std::unique_ptr<MyThreadPool>(new MyThreadPool(thread_size));
+  }
+
+  static MyThreadPool& GetInstance() {
+    if (!instance.get()) {
+      throw std::logic_error("You have to call Init before GetInstance.");
+    }
+    return *instance;
+  }
 
   template <typename F, typename T = std::invoke_result_t<F>>
   std::future<T> Submit(F func) {
@@ -46,8 +61,10 @@ class MyThreadPool {
 
   void WaitAll();
 
+  inline static void ResetForTest() { instance = nullptr; };
+
  private:
-  MyThreadPool();
+  MyThreadPool(const size_t thread_size);
   void WorkInThread();
 
   std::vector<std::thread> thread_vector_;
@@ -57,6 +74,8 @@ class MyThreadPool {
   std::condition_variable cv_wait_all;
   std::atomic<bool> stop_;
   std::atomic<int> running_func_count;
+  const size_t kNumThread;
+  static std::unique_ptr<MyThreadPool> instance;
 };
 
 #endif  // MY_THREAD_POOL

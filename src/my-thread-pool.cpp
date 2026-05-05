@@ -39,14 +39,6 @@ MyThreadPool& MyThreadPool::GetInstance() {
   return instance;
 }
 
-void MyThreadPool::Submit(std::function<void()> func) {
-  {
-    std::lock_guard<std::mutex> lock(mtx_);
-    task_queue_.push(std::move(func));
-  }
-  cv_thread.notify_one();
-}
-
 void MyThreadPool::WaitAll() {
   std::unique_lock<std::mutex> lock(mtx_);
   cv_wait_all.wait(lock, [this]() {

@@ -4,6 +4,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -18,7 +19,31 @@ class MyThreadPool {
   MyThreadPool& operator=(const MyThreadPool&) = delete;
 
   static MyThreadPool& GetInstance();
-  void Submit(std::function<void()> func);
+
+  template <typename F, typename T = std::invoke_result_t<F>>
+  std::future<T> Submit(F func) {
+    std::promise<T> promise;
+    std::future<T> future = promise.get_future();
+    std::packaged_task<void()> task{[p = std::move(promise), func]() mutable {
+      try {
+        if constexpr (std::is_void_v<T>) {
+          p.set_value();
+          func();
+        } else {
+          p.set_value(func());
+        }
+      } catch (...) {
+        p.set_exception(std::current_exception());
+      }
+    }};
+    {
+      std::lock_guard<std::mutex> lock(mtx_);
+      task_queue_.emplace(std::move(task));
+    }
+    cv_thread.notify_one();
+    return future;
+  }
+
   void WaitAll();
 
  private:
@@ -26,7 +51,7 @@ class MyThreadPool {
   void WorkInThread();
 
   std::vector<std::thread> thread_vector_;
-  std::queue<std::function<void()>> task_queue_;
+  std::queue<std::packaged_task<void()>> task_queue_;
   std::mutex mtx_;
   std::condition_variable cv_thread;
   std::condition_variable cv_wait_all;
